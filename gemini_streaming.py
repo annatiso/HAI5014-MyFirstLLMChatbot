@@ -11,18 +11,23 @@ client = OpenAI(
 )
 
 def get_response(user_input, messages=None):
-    
-    response = client.chat.completions.create(
+what    if messages is None:
         messages = [
             {
                 "role": "system",
                 "content": "You are a helpful assistant.",
-            },
-            {
-                "role": "user",
-                "content": user_input
             }
-        ],
+        ]
+    
+    # Add the user's input to the conversation history
+    messages.append({
+        "role": "user",
+        "content": user_input
+    })
+    
+    # Use the full conversation history for context
+    response = client.chat.completions.create(
+        messages=messages,  # Pass the entire conversation history
         model=model_name,
         stream=True,
         stream_options={'include_usage': True}
@@ -37,7 +42,13 @@ def get_response(user_input, messages=None):
             print(content, end="")
             assistant_response += content
         if update.usage:
-            usage = update.usagewhat
+            usage = update.usage
+    
+    # Add the assistant's response to the conversation history
+    messages.append({
+        "role": "assistant",
+        "content": assistant_response
+    })
     
     if usage:
         print("\n")
