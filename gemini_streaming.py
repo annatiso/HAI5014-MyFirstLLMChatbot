@@ -10,30 +10,62 @@ client = OpenAI(
     api_key=token,
 )
 
-response = client.chat.completions.create(
-    messages=[
+def get_response(user_input, messages=None):
+    if messages is None:
+        messages = [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant.",
+            }
+        ]
+    
+    # Add the user's input to messages
+    messages.append({"role": "user", "content": user_input})
+    
+    response = client.chat.completions.create(
+        messages=messages,
+        model=model_name,
+        stream=True,
+        stream_options={'include_usage': True}
+    )
+    
+    print("\nAssistant: ", end="")
+    assistant_response = ""
+    usage = None
+    for update in response:
+        if update.choices and update.choices[0].delta:
+            content = update.choices[0].delta.content or ""
+            print(content, end="")
+            assistant_response += content
+        if update.usage:
+            usage = update.usage
+    
+    # Add assistant's response to the conversation history
+    messages.append({"role": "assistant", "content": assistant_response})
+    
+    if usage:
+        print("\n")
+        for k, v in usage.dict().items():
+            print(f"{k} = {v}")
+    
+    return messages
+
+def main():
+    print("Welcome to the interactive Gemini chat! (Type 'exit' to quit)")
+    conversation_history = [
         {
             "role": "system",
             "content": "You are a helpful assistant.",
-        },
-        {
-            "role": "user",
-            "content": "Give me 5 good reasons why I should exercise every day.",
         }
-    ],
-    model=model_name,
-    stream=True,
-    stream_options={'include_usage': True}
-)
+    ]
+    
+    while True:
+        user_input = input("\nYou: ")
+        if user_input.lower() in ["exit", "quit", "bye"]:
+            print("Goodbye!")
+            break
+        
+        conversation_history = get_response(user_input, conversation_history)
 
-usage = None
-for update in response:
-    if update.choices and update.choices[0].delta:
-        print(update.choices[0].delta.content or "", end="")
-    if update.usage:
-        usage = update.usage
-
-if usage:
-    print("\n")
-    for k, v in usage.dict().items():
-        print(f"{k} = {v}")
+if __name__ == "__main__":
+    main()
