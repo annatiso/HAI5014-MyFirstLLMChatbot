@@ -11,19 +11,18 @@ client = OpenAI(
 )
 
 def get_response(user_input, messages=None):
-    if messages is None:
+    
+    response = client.chat.completions.create(
         messages = [
             {
                 "role": "system",
                 "content": "You are a helpful assistant.",
+            },
+            {
+                "role": "user",
+                "content": user_input
             }
-        ]
-    
-    # Add the user's input to messages
-    messages.append({"role": "user", "content": user_input})
-    
-    response = client.chat.completions.create(
-        messages=messages,
+        ],
         model=model_name,
         stream=True,
         stream_options={'include_usage': True}
@@ -38,10 +37,7 @@ def get_response(user_input, messages=None):
             print(content, end="")
             assistant_response += content
         if update.usage:
-            usage = update.usage
-    
-    # Add assistant's response to the conversation history
-    messages.append({"role": "assistant", "content": assistant_response})
+            usage = update.usagewhat
     
     if usage:
         print("\n")
